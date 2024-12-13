@@ -1,0 +1,114 @@
+formatter: "markdown table"
+
+version: ">= 0.16.0, < 1.0.0"
+
+header-from: main.tf
+footer-from: ""
+
+recursive:
+  enabled: false
+
+sections:
+  hide: []
+  show:
+    - all
+
+content: ""
+
+output:
+  file: "README.md"
+  mode: replace
+  template: |-
+    # Reference Private ROSA HCP shared vpc
+    This terraform management file will generate a reference Private ROSA HCP cluster in shared vpc architecture.
+    Includes:
+    * Cluster owner account
+      * Account roles
+      * OIDC Config and Provider
+      * Operator roles
+      * Cluster
+      * Shared VPC Assume Roles
+        * Route53 assume role
+        * Attached to
+          * Installer Account Role
+          * Ingress Operator Role
+          * Control Plane Operator Role
+      * VPCE assume role
+        * Attached to
+          * Installer Account Role
+          * Control Plane Operator Role
+    * Network owner account
+      * VPC
+        * 1 Private Subnet
+        * 1 Public Subnet
+      * Hosted Zones
+        * Ingress Private Hosted Zone
+        * HCP Internal Communication Hosted Zone
+      * Shared VPC Roles
+        * Route53 role
+        * VPCE role
+      * Shared Resources
+        * Shares Private Subnet to Cluster owner account
+      * Bastion Host tied to the public subnet with ingress configuration to allow IP of the current machine
+
+    It depends on customer opening a support request to enable the feature for their organization, otherwise will meet error regarding feature not available for hcp clusters.
+    Also depends on utilizing [customer managed policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_managed-vs-inline.html) for shared vpc roles and modules pointing to a feature branch of [terraform-rhcs-rosa-hcp](https://github.com/terraform-redhat/terraform-rhcs-rosa-hcp/tree/shared-vpc)
+
+    # Usage
+
+    ## Planning
+
+    - Full usage with command line variable
+
+            $ terraform plan -out rosa.tfplan \
+                -var cluster_name=rosa-hcp \
+                -var openshift_version=4.17.9 \
+                -var cluster_owner_aws_profile=cluster_owner_aws_profile \
+                -var network_owner_aws_profile=network_owner_aws_profile
+
+    ## Apply
+
+        $ terraform apply rosa.tfplan
+
+    ## Post cluster ready
+    
+        Once apply is finished successfully the scripts within the /assets folder may be used to access the private cluster via `oc` CLI
+        ```
+        sh ./assets/bastion_connect.sh
+        ```
+        Generates a transparent proxy via sshuttle that forwards ssh to the bastion host
+        Logins in to the cluster via oc
+        ```
+        oc get co
+        ```
+        Sample command to test cluster connection, will describe cluster operators resources
+        ```
+        sh ./assets/bastion_disconnect.sh
+        ```
+        Kills the sshuttle daemon based on the pid stored in local file
+    # Reference
+
+    {{ .Content }}
+
+output-values:
+  enabled: false
+  from: ""
+
+sort:
+  enabled: true
+  by: name
+
+settings:
+  anchor: false
+  color: true
+  default: true
+  description: false
+  escape: true
+  hide-empty: false
+  html: true
+  indent: 2
+  lockfile: true
+  read-comments: true
+  required: true
+  sensitive: true
+  type: true
